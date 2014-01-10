@@ -28,34 +28,49 @@ class beaver::package {
 
   include python
 
-  # set params: in operation
-  if $beaver::ensure == 'present' {
+#  # set params: in operation
+#  if $beaver::ensure == 'present' {
+#
+#    # Check if we want to install a specific version or not
+#    if $beaver::version == false {
+#
+#      $package_ensure = $beaver::autoupgrade ? {
+#        true  => 'latest',
+#        false => 'present',
+#      }
+#
+#    } else {
+#
+#      # install specific version
+#      $package_ensure = $beaver::version
+#
+#    }
+#
+#  # set params: removal
+#  } else {
+#    $package_ensure = 'purged'
+#  }
+#
+#  # action
+#  package { $beaver::params::package:
+#    ensure   => $package_ensure,
+#    provider => 'pip',
+#    require  => Class['python'],
+#  }
 
-    # Check if we want to install a specific version or not
-    if $beaver::version == false {
+  $install_dir = "/tmp/beaver"
 
-      $package_ensure = $beaver::autoupgrade ? {
-        true  => 'latest',
-        false => 'present',
-      }
+  vcsrepo { $install_dir:
+    ensure   => present,
+    provider => git,
+    source   => "https://github.com/josegonzalez/beaver.git"
+  } ->
 
-    } else {
-
-      # install specific version
-      $package_ensure = $beaver::version
-
-    }
-
-  # set params: removal
-  } else {
-    $package_ensure = 'purged'
-  }
-
-  # action
-  package { $beaver::params::package:
-    ensure   => $package_ensure,
-    provider => 'pip',
-    require  => Class['python'],
+  exec { "setup":
+    path    => ["/usr/bin", "/bin", "/usr/local/bin"],
+    pwd     => $install_dir,
+    command => "python setup.py install",
+    unless  => "test -f /usr/local/bin/beaver",
   }
 
 }
